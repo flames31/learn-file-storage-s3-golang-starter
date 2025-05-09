@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
@@ -36,7 +37,6 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 	const maxMemory = 10 << 20
 	r.ParseMultipartForm(maxMemory)
 
-	// "thumbnail" should match the HTML form input name
 	file, header, err := r.FormFile("thumbnail")
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Unable to parse form file", err)
@@ -62,14 +62,8 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	newThumbnail := thumbnail{
-		data:      imgBytes,
-		mediaType: newMediaType,
-	}
-
-	videoThumbnails[videoID] = newThumbnail
-
-	newThumbnailURL := fmt.Sprintf("http://localhost:8091/api/thumbnails/%v", videoIDString)
+	encodedImg := base64.StdEncoding.EncodeToString(imgBytes)
+	newThumbnailURL := fmt.Sprintf("data:%s;base64,%s", newMediaType, encodedImg)
 
 	video.ThumbnailURL = &(newThumbnailURL)
 
